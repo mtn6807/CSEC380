@@ -3,11 +3,12 @@ import argparse
 from netaddr import *
 
 ENDPOINT = "http://csec.rit.edu"
+TIMEOUT = 5
 
 def scanThis(ip):
     proxies = {"http":"http://"+str(ip)}
     try:
-        r = requests.get(ENDPOINT, proxies=proxies, timeout=5)
+        r = requests.get(ENDPOINT, proxies=proxies, timeout=TIMEOUT)
         if(r.status_code==200):
             return str(ip)
         else:

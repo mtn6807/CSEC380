@@ -1,0 +1,15 @@
+version: '3'
+services:
+    web:
+        build:
+            context: .
+            dockerfile: activityOne.dockerfile
+        ports:
+            - "8080:80"
+    cache:
+        build:
+            context: .
+            dockerfile: activityTwo.dockerfile
+        ports:
+            - "80:80"
+
