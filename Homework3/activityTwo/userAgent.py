@@ -1,4 +1,6 @@
 import socket
+import ssl
+import asyncio
 
 def buildBody(param):
     body = ""
@@ -33,34 +35,55 @@ def buildReqStr(method, path, version, host, parameters, contentType="applicatio
     
     return reqstr
 
+def recv_all(connection):
+    data = []
+    while True:
+        data.append(connection.recv(2048))
+        if not data[-1]:
+            return data
 
-def parseResp(res):
-    final = ""
-    #res = res.split("'")[1]
-    for x in res.split("\\r\\n"):
-        final+=x
-        final+='\n'
-    return final
+def pull_html(resp):
+    holder = []
+    first = True 
+    for x in resp.split('\n\n'):
+        if not first:
+            holder.append(x)
+        first = False
+    return "".join(holder)
 
+def formatHeader(response):
+    final = []
+    stringresponse = ""
+    bytestringresponse = b''
+    for i in response:
+        stringresponse+=i.decode("utf-8",'replace')
+        bytestringresponse = bytestringresponse+i
+    final.append(stringresponse.split("\r\n\r\n")[0])
+    bytestringresponse = bytearray(bytestringresponse)
+    bytestringresponse = bytestringresponse[len(final[0])+4:]
+    final.append(bytestringresponse)
+    return final    
 
 def makeReq(method, filepath, httpversion, host, port, parameters=[]):
     #create socket
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-
+    context = ssl.create_default_context()
+    if(port==443):
+        s = context.wrap_socket(s,server_hostname=host)
+    
     #connect to target
     s.connect((host,port))
 
     #send request
     request = buildReqStr(method, filepath, httpversion, host, parameters)
-    print(request)
+    #print("==================req===================\n"+request+"\n\n")
     s.send(request.encode("utf-8"))
 
     #recieve
-    response = s.recv(4096).decode("ascii")
-    http_response = repr(response)
+    response = recv_all(s)
+    http_response = formatHeader(response)
 
     s.shutdown(1)
     s.close()
 
-    #print
     return(http_response)
